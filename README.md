@@ -1,89 +1,103 @@
 # SkillHub Docker Compose
 
-SkillHub 平台的 Docker Compose 部署配置，每个服务独立，通过 `.env` 文件加载配置，数据卷挂载到本地目录。
+内网部署方案，各服务独立运行，通过宿主机 IP + 端口通信，Nginx 统一反向代理。
 
 ## 目录结构
 
 ```
-skillhub/
-└── compose/
-    ├── postgres/
-    │   ├── compose.yml
-    │   ├── .env
-    │   └── data/              # PostgreSQL 数据目录
-    ├── redis/
-    │   ├── compose.yml
-    │   ├── .env
-    │   └── data/              # Redis 数据目录
-    └── skillhub/
-        ├── compose.yml
-        ├── .env
-        └── storage/           # 文件存储目录
+compose/
+├── postgres/
+│   ├── compose.yml
+│   └── data/          # 数据库文件
+├── redis/
+│   ├── compose.yml
+│   └── data/          # Redis 数据
+├── rustfs/
+│   ├── compose.yml
+│   └── storage/       # 文件存储
+├── skillhub/
+│   ├── compose.yml
+│   └── storage/       # SkillHub 存储
+└── nginx/
+    ├── compose.yml
+    ├── nginx.conf
+    ├── conf.d/
+    └── logs/          # 日志目录
 ```
 
-## 启动方式
+## 端口分配
 
-### 1. 启动 PostgreSQL
+| 服务 | 端口 | 说明 |
+|------|------|------|
+| postgres | 5432 | 数据库 |
+| redis | 6379 | 缓存 |
+| rustfs | 8000 | 文件存储 |
+| skillhub-server | 8081 | API 服务 |
+| skillhub-web | 8082 | Web 界面 |
+| skill-scanner | 8083 | 安全扫描 |
+| nginx | 80 | 反向代理 |
+
+## 部署步骤
+
+### 1. 修改宿主机 IP
+
+将所有配置中的 `172.16.0.1` 改为你的宿主机内网 IP：
 
 ```bash
-cd compose/postgres
-docker compose up -d
+# 查找宿主机 IP
+ip addr show | grep "inet " | grep -v 127.0.0.1
+
+# 批量替换
+find compose -type f \( -name "*.yml" -o -name "*.conf" \) -exec sed -i 's/172.16.0.1/你的 IP/g' {} \;
 ```
 
-### 2. 启动 Redis
+### 2. 启动服务
 
 ```bash
-cd compose/redis
-docker compose up -d
+# 1. 数据库
+cd compose/postgres && docker compose up -d
+
+# 2. 缓存
+cd compose/redis && docker compose up -d
+
+# 3. 文件存储
+cd compose/rustfs && docker compose up -d
+
+# 4. SkillHub 应用
+cd compose/skillhub && docker compose up -d
+
+# 5. Nginx 反向代理
+cd compose/nginx && docker compose up -d
 ```
 
-### 3. 启动 SkillHub 应用
+### 3. 验证服务
 
 ```bash
-cd compose/skillhub
-docker compose up -d
+# 检查所有容器
+docker ps
+
+# 测试端口连通性
+nc -zv <HOST_IP> 5432
+nc -zv <HOST_IP> 6379
+nc -zv <HOST_IP> 8000
+nc -zv <HOST_IP> 8081
+nc -zv <HOST_IP> 8082
+nc -zv <HOST_IP> 8083
 ```
 
-## 配置说明
+## 访问方式
 
-### postgres/.env
+### 直接访问
+- Web: `http://<HOST_IP>:8082`
+- API: `http://<HOST_IP>:8081`
+- Scanner: `http://<HOST_IP>:8083`
+- RustFS: `http://<HOST_IP>:8000`
 
-| 变量 | 说明 |
-|------|------|
-| `POSTGRES_IMAGE` | PostgreSQL 镜像 |
-| `POSTGRES_BIND_ADDRESS` | 绑定地址 |
-| `POSTGRES_PORT` | 端口 |
-| `POSTGRES_DB` | 数据库名 |
-| `POSTGRES_USER` | 用户名 |
-| `POSTGRES_PASSWORD` | 密码 |
-
-### redis/.env
-
-| 变量 | 说明 |
-|------|------|
-| `REDIS_IMAGE` | Redis 镜像 |
-| `REDIS_BIND_ADDRESS` | 绑定地址 |
-| `REDIS_PORT` | 端口 |
-
-### skillhub/.env
-
-| 变量 | 说明 |
-|------|------|
-| `SKILLHUB_VERSION` | 镜像版本 |
-| `SKILLHUB_SERVER_IMAGE` | Server 镜像 |
-| `SKILLHUB_WEB_IMAGE` | Web 镜像 |
-| `SKILLHUB_SCANNER_IMAGE` | Scanner 镜像 |
-| `API_PORT` | Server 端口 |
-| `WEB_PORT` | Web 端口 |
-| `SCANNER_PORT` | Scanner 端口 |
-| `SKILLHUB_PUBLIC_BASE_URL` | 公共访问 URL |
-| `POSTGRES_HOST` | PostgreSQL 主机 |
-| `POSTGRES_PORT` | PostgreSQL 端口 |
-| `POSTGRES_DB` | 数据库名 |
-| `POSTGRES_USER` | 数据库用户 |
-| `POSTGRES_PASSWORD` | 数据库密码 |
-| `REDIS_HOST` | Redis 主机 |
-| `REDIS_PORT` | Redis 端口 |
+### 通过 Nginx 访问
+- Web: `http://<HOST_IP>/`
+- API: `http://<HOST_IP>/api/`
+- Files: `http://<HOST_IP>/files/`
+- Scanner: `http://<HOST_IP>/scanner/`
 
 ## 常用命令
 
@@ -97,16 +111,35 @@ docker compose logs -f
 # 停止服务
 docker compose down
 
-# 停止服务并删除容器 (保留本地数据)
-docker compose rm -f
+# 重启服务
+docker compose restart
+```
+
+## 防火墙配置
+
+如果启用了防火墙，建议只开放 Nginx 端口：
+
+```bash
+# firewalld
+firewall-cmd --permanent --add-port=80/tcp
+firewall-cmd --reload
 ```
 
 ## 数据持久化
 
 | 目录 | 服务 | 说明 |
 |------|------|------|
-| `compose/postgres/data` | postgres | PostgreSQL 数据 |
+| `compose/postgres/data` | postgres | 数据库文件 |
 | `compose/redis/data` | redis | Redis 数据 |
-| `compose/skillhub/storage` | server | 文件存储 |
+| `compose/rustfs/storage` | rustfs | 文件存储 |
+| `compose/skillhub/storage` | server | SkillHub 存储 |
+| `compose/nginx/logs` | nginx | 访问日志 |
 
-数据直接挂载到 compose 同级目录，便于备份和管理。
+## 配置说明
+
+所有配置已硬编码在 compose.yml 文件中，无需 .env 文件。
+
+**默认配置：**
+- PostgreSQL: 用户 `skillhub`, 密码 `skillhub_demo`
+- Redis: 无密码
+- 管理员：用户名 `admin`, 密码 `ChangeMe!2026`

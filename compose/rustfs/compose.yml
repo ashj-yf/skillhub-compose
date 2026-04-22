@@ -1,28 +1,20 @@
 services:
   rustfs:
-    image: ${RUSTFS_IMAGE}
+    image: ghcr.io/rustfs/rustfs:latest
     restart: unless-stopped
     ports:
-      - "${RUSTFS_BIND_ADDRESS}:${RUSTFS_PORT}:8000"
-    env_file:
-      - .env
+      - "0.0.0.0:8000:8000"
     environment:
-      RUSTFS_WORKERS: ${RUSTFS_WORKERS}
-      RUSTFS_MAX_UPLOAD_SIZE: ${RUSTFS_MAX_UPLOAD_SIZE}
-      RUSTFS_ALLOWED_EXTENSIONS: ${RUSTFS_ALLOWED_EXTENSIONS}
-      RUSTFS_STORAGE_PATH: ${RUSTFS_STORAGE_PATH}
-      RUSTFS_PUBLIC_URL: ${RUSTFS_PUBLIC_URL}
-      RUSTFS_AUTH_TOKEN: ${RUSTFS_AUTH_TOKEN}
+      RUSTFS_WORKERS: "4"
+      RUSTFS_MAX_UPLOAD_SIZE: "104857600"
+      RUSTFS_ALLOWED_EXTENSIONS: ""
+      RUSTFS_STORAGE_PATH: /data
+      RUSTFS_PUBLIC_URL: http://172.16.0.1:8000
+      RUSTFS_AUTH_TOKEN: ""
     volumes:
-      - ./storage:${RUSTFS_STORAGE_PATH}
+      - ./storage:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - rustfs-network
-
-networks:
-  rustfs-network:
-    driver: bridge

@@ -1,11 +1,9 @@
 services:
   redis:
-    image: ${REDIS_IMAGE}
+    image: redis:7-alpine
     restart: unless-stopped
     ports:
-      - "${REDIS_BIND_ADDRESS}:${REDIS_PORT}:6379"
-    env_file:
-      - .env
+      - "0.0.0.0:6379:6379"
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - ./data:/data
