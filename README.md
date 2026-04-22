@@ -1,6 +1,6 @@
 # SkillHub Docker Compose
 
-内网部署方案，各服务独立运行，通过宿主机 IP + 端口通信，Nginx 统一反向代理。
+内网部署方案，各服务独立运行，通过宿主机 IP + 端口通信。
 
 ## 目录结构
 
@@ -8,21 +8,17 @@
 compose/
 ├── postgres/
 │   ├── compose.yml
-│   └── data/          # 数据库文件
+│   └── data/
 ├── redis/
 │   ├── compose.yml
-│   └── data/          # Redis 数据
-├── rustfs/
+│   └── data/
+├── minio/            # S3 兼容对象存储
 │   ├── compose.yml
-│   └── storage/       # 文件存储
-├── skillhub/
-│   ├── compose.yml
-│   └── storage/       # SkillHub 存储
-└── nginx/
+│   └── data/
+└── skillhub/
     ├── compose.yml
-    ├── nginx.conf
-    ├── conf.d/
-    └── logs/          # 日志目录
+    ├── .env
+    └── storage/
 ```
 
 ## 端口分配
@@ -31,11 +27,11 @@ compose/
 |------|------|------|
 | postgres | 5432 | 数据库 |
 | redis | 6379 | 缓存 |
-| rustfs | 8000 | 文件存储 |
+| minio | 9000 | S3 API |
+| minio | 9001 | MinIO 控制台 |
 | skillhub-server | 8081 | API 服务 |
 | skillhub-web | 8082 | Web 界面 |
 | skill-scanner | 8083 | 安全扫描 |
-| nginx | 80 | 反向代理 |
 
 ## 部署步骤
 
@@ -60,14 +56,11 @@ cd compose/postgres && docker compose up -d
 # 2. 缓存
 cd compose/redis && docker compose up -d
 
-# 3. 文件存储
-cd compose/rustfs && docker compose up -d
+# 3. 对象存储 (MinIO)
+cd compose/minio && docker compose up -d
 
 # 4. SkillHub 应用
 cd compose/skillhub && docker compose up -d
-
-# 5. Nginx 反向代理
-cd compose/nginx && docker compose up -d
 ```
 
 ### 3. 验证服务
@@ -79,25 +72,33 @@ docker ps
 # 测试端口连通性
 nc -zv <HOST_IP> 5432
 nc -zv <HOST_IP> 6379
-nc -zv <HOST_IP> 8000
+nc -zv <HOST_IP> 9000
 nc -zv <HOST_IP> 8081
-nc -zv <HOST_IP> 8082
-nc -zv <HOST_IP> 8083
 ```
 
 ## 访问方式
 
-### 直接访问
+### 直接访问服务
 - Web: `http://<HOST_IP>:8082`
 - API: `http://<HOST_IP>:8081`
 - Scanner: `http://<HOST_IP>:8083`
-- RustFS: `http://<HOST_IP>:8000`
+- MinIO 控制台：`http://<HOST_IP>:9001`
 
-### 通过 Nginx 访问
-- Web: `http://<HOST_IP>/`
-- API: `http://<HOST_IP>/api/`
-- Files: `http://<HOST_IP>/files/`
-- Scanner: `http://<HOST_IP>/scanner/`
+## 存储配置
+
+### MinIO S3 存储 (默认)
+SkillHub 使用 MinIO 作为对象存储后端。
+
+**MinIO 配置：**
+- 端点：`http://<HOST_IP>:9000`
+- 用户名：`minioadmin`
+- 密码：`minioadmin`
+- Bucket：`skillhub` (自动创建)
+
+**访问 MinIO 控制台：**
+1. 打开 `http://<HOST_IP>:9001`
+2. 登录：`minioadmin` / `minioadmin`
+3. 查看 `skillhub` bucket 中的文件
 
 ## 常用命令
 
@@ -115,31 +116,37 @@ docker compose down
 docker compose restart
 ```
 
-## 防火墙配置
-
-如果启用了防火墙，建议只开放 Nginx 端口：
-
-```bash
-# firewalld
-firewall-cmd --permanent --add-port=80/tcp
-firewall-cmd --reload
-```
-
 ## 数据持久化
 
 | 目录 | 服务 | 说明 |
 |------|------|------|
 | `compose/postgres/data` | postgres | 数据库文件 |
 | `compose/redis/data` | redis | Redis 数据 |
-| `compose/rustfs/storage` | rustfs | 文件存储 |
+| `compose/minio/data` | minio | S3 对象存储 |
 | `compose/skillhub/storage` | server | SkillHub 存储 |
-| `compose/nginx/logs` | nginx | 访问日志 |
 
-## 配置说明
+## 默认凭证
 
-所有配置已硬编码在 compose.yml 文件中，无需 .env 文件。
+| 服务 | 用户名 | 密码 |
+|------|--------|------|
+| PostgreSQL | skillhub | skillhub_demo |
+| MinIO | minioadmin | minioadmin |
+| SkillHub 管理员 | admin | ChangeMe!2026 |
 
-**默认配置：**
-- PostgreSQL: 用户 `skillhub`, 密码 `skillhub_demo`
-- Redis: 无密码
-- 管理员：用户名 `admin`, 密码 `ChangeMe!2026`
+## 安全建议
+
+1. **修改默认密码**：
+   - MinIO: 修改 `compose/minio/compose.yml` 中的 `MINIO_ROOT_USER` 和 `MINIO_ROOT_PASSWORD`
+   - PostgreSQL: 修改 `compose/postgres/compose.yml` 中的 `POSTGRES_PASSWORD`
+   - SkillHub: 登录后修改管理员密码
+
+2. **防火墙配置**：
+   ```bash
+   # 只开放必要端口
+   firewall-cmd --permanent --add-port=80/tcp
+   firewall-cmd --reload
+   ```
+
+3. **使用 HTTPS**：
+   - 配置 Nginx SSL 证书
+   - 启用 `SESSION_COOKIE_SECURE: "true"`
