@@ -1,0 +1,16 @@
+services:
+  redis:
+    image: ${REDIS_IMAGE}
+    restart: unless-stopped
+    ports:
+      - "${REDIS_BIND_ADDRESS}:${REDIS_PORT}:6379"
+    env_file:
+      - .env
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - ./data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
