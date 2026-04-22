@@ -3,7 +3,7 @@ services:
     image: ${SKILLHUB_SERVER_IMAGE}:${SKILLHUB_VERSION}
     restart: unless-stopped
     ports:
-      - "${API_BIND_ADDRESS:-0.0.0.0}:${API_PORT}:8080"
+      - "${API_BIND_ADDRESS}:${API_PORT}:8080"
     env_file:
       - .env
     environment:
@@ -40,20 +40,20 @@ services:
       OAUTH2_GITHUB_CLIENT_SECRET: ${OAUTH2_GITHUB_CLIENT_SECRET}
     volumes:
       - ./storage:/var/lib/skillhub/storage
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
       interval: 10s
       timeout: 5s
       retries: 12
       start_period: 60s
+    networks:
+      - skillhub-network
 
   web:
     image: ${SKILLHUB_WEB_IMAGE}:${SKILLHUB_VERSION}
     restart: unless-stopped
     ports:
-      - "${WEB_BIND_ADDRESS:-0.0.0.0}:${WEB_PORT}:80"
+      - "${WEB_BIND_ADDRESS}:${WEB_PORT}:80"
     env_file:
       - .env
     environment:
@@ -69,12 +69,14 @@ services:
       timeout: 5s
       retries: 12
       start_period: 10s
+    networks:
+      - skillhub-network
 
   skill-scanner:
     image: ${SKILLHUB_SCANNER_IMAGE}:${SKILLHUB_VERSION}
     restart: unless-stopped
     ports:
-      - "${SCANNER_BIND_ADDRESS:-0.0.0.0}:${SCANNER_PORT}:8000"
+      - "${SCANNER_BIND_ADDRESS}:${SCANNER_PORT}:8000"
     env_file:
       - .env
     environment:
@@ -86,3 +88,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    networks:
+      - skillhub-network
+
+networks:
+  skillhub-network:
+    driver: bridge

@@ -20,3 +20,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - rustfs-network
+
+networks:
+  rustfs-network:
+    driver: bridge
