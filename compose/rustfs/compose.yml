@@ -1,5 +1,6 @@
 services:
   rustfs:
+    container_name: rustfs
     image: ghcr.io/rustfs/rustfs:latest
     restart: unless-stopped
     ports:

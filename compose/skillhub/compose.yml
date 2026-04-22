@@ -1,5 +1,6 @@
 services:
   server:
+    container_name: skillhub-server
     image: ghcr.io/iflytek/skillhub-server:latest
     restart: unless-stopped
     ports:
@@ -47,6 +48,7 @@ services:
       start_period: 60s
 
   web:
+    container_name: skillhub-web
     image: ghcr.io/iflytek/skillhub-web:latest
     restart: unless-stopped
     ports:
@@ -68,6 +70,7 @@ services:
       start_period: 10s
 
   skill-scanner:
+    container_name: skillhub-scanner
     image: ghcr.io/iflytek/skillhub-scanner:latest
     restart: unless-stopped
     ports:
