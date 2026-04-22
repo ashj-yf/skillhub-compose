@@ -16,10 +16,8 @@ services:
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE}
       SKILLHUB_PUBLIC_BASE_URL: ${SKILLHUB_PUBLIC_BASE_URL}
       DEVICE_AUTH_VERIFICATION_URI: ${DEVICE_AUTH_VERIFICATION_URI}
-      # 存储配置
       SKILLHUB_STORAGE_PROVIDER: ${SKILLHUB_STORAGE_PROVIDER}
       STORAGE_BASE_PATH: /var/lib/skillhub/storage
-      # S3 存储配置
       SKILLHUB_STORAGE_S3_ENDPOINT: ${SKILLHUB_STORAGE_S3_ENDPOINT}
       SKILLHUB_STORAGE_S3_PUBLIC_ENDPOINT: ${SKILLHUB_STORAGE_S3_PUBLIC_ENDPOINT}
       SKILLHUB_STORAGE_S3_BUCKET: ${SKILLHUB_STORAGE_S3_BUCKET}
@@ -29,29 +27,21 @@ services:
       SKILLHUB_STORAGE_S3_FORCE_PATH_STYLE: ${SKILLHUB_STORAGE_S3_FORCE_PATH_STYLE}
       SKILLHUB_STORAGE_S3_AUTO_CREATE_BUCKET: ${SKILLHUB_STORAGE_S3_AUTO_CREATE_BUCKET}
       SKILLHUB_STORAGE_S3_PRESIGN_EXPIRY: ${SKILLHUB_STORAGE_S3_PRESIGN_EXPIRY}
-      # 安全扫描
       SKILLHUB_SECURITY_SCANNER_ENABLED: ${SKILLHUB_SECURITY_SCANNER_ENABLED}
       SKILLHUB_SECURITY_SCANNER_URL: ${SKILLHUB_SECURITY_SCANNER_URL}
       SKILLHUB_SECURITY_SCANNER_MODE: ${SKILLHUB_SECURITY_SCANNER_MODE}
-      # 管理员配置
       BOOTSTRAP_ADMIN_ENABLED: ${BOOTSTRAP_ADMIN_ENABLED}
       BOOTSTRAP_ADMIN_USER_ID: ${BOOTSTRAP_ADMIN_USER_ID}
       BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME}
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD}
       BOOTSTRAP_ADMIN_DISPLAY_NAME: ${BOOTSTRAP_ADMIN_DISPLAY_NAME}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL}
-      # OAuth2 GitHub
       OAUTH2_GITHUB_CLIENT_ID: ${OAUTH2_GITHUB_CLIENT_ID}
       OAUTH2_GITHUB_CLIENT_SECRET: ${OAUTH2_GITHUB_CLIENT_SECRET}
     volumes:
       - ./storage:/var/lib/skillhub/storage
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    depends_on:
-      postgres-check:
-        condition: service_completed_successfully
-      redis-check:
-        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
       interval: 10s
@@ -96,37 +86,3 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-
-  rustfs:
-    image: ${RUSTFS_IMAGE}
-    restart: unless-stopped
-    ports:
-      - "${RUSTFS_BIND_ADDRESS}:${RUSTFS_PORT}:8000"
-    env_file:
-      - .env
-    environment:
-      RUSTFS_WORKERS: ${RUSTFS_WORKERS}
-      RUSTFS_MAX_UPLOAD_SIZE: ${RUSTFS_MAX_UPLOAD_SIZE}
-      RUSTFS_ALLOWED_EXTENSIONS: ${RUSTFS_ALLOWED_EXTENSIONS}
-      RUSTFS_STORAGE_PATH: ${RUSTFS_STORAGE_PATH}
-      RUSTFS_PUBLIC_URL: ${RUSTFS_PUBLIC_URL}
-      RUSTFS_AUTH_TOKEN: ${RUSTFS_AUTH_TOKEN}
-    volumes:
-      - ./rustfs-storage:${RUSTFS_STORAGE_PATH}
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  postgres-check:
-    image: postgres:16-alpine
-    command: >
-      sh -c "until pg_isready -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${POSTGRES_USER}; do sleep 1; done"
-    depends_on: []
-
-  redis-check:
-    image: redis:7-alpine
-    command: >
-      sh -c "until redis-cli -h ${REDIS_HOST} -p ${REDIS_PORT} ping | grep -q PONG; do sleep 1; done"
-    depends_on: []
