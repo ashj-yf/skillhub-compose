@@ -5,6 +5,8 @@ services:
     image: quay.io/keycloak/keycloak:26.2
     restart: unless-stopped
     command: start-dev
+    security_opt:
+      - seccomp=unconfined
     ports:
       - "0.0.0.0:${KEYCLOAK_PORT}:8080"
     env_file:
