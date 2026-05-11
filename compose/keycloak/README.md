@@ -2,13 +2,16 @@
 
 ## 前置条件
 
-### 1. 创建数据库
+### 1. 初始化数据库
 
-Keycloak 需要独立的 PostgreSQL 数据库，需手动创建：
+Keycloak 需要独立的 PostgreSQL 数据库和专用用户，执行初始化 SQL：
 
 ```bash
-docker exec -i postgres psql -U skillhub -d skillhub -c "CREATE DATABASE keycloak;"
+docker exec -i postgres psql -U skillhub -d skillhub < init.sql
 ```
+
+该脚本会创建 `keycloak` 数据库和 `keycloak` 专用用户（密码 `keycloak_demo`）。
+如需修改密码，同步更新 `init.sql` 和 `.env` 中的 `POSTGRES_PASSWORD`。
 
 ### 2. 配置环境变量
 
