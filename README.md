@@ -62,7 +62,7 @@ cd compose/redis && docker compose up -d
 # 3. 对象存储 (MinIO)
 cd compose/minio && docker compose up -d
 
-# 4. OIDC Provider (Keycloak，可选)
+# 4. OIDC Provider (Keycloak，可选，详见 compose/keycloak/README.md)
 cd compose/keycloak && docker compose up -d
 
 # 5. SkillHub 应用
