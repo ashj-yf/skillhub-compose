@@ -15,6 +15,8 @@ compose/
 ├── minio/            # S3 兼容对象存储
 │   ├── compose.yml
 │   └── data/
+├── keycloak/         # OIDC Provider（可选，用于 LDAP 等认证桥接）
+│   └── compose.yml
 └── skillhub/
     ├── compose.yml
     ├── .env
@@ -29,6 +31,7 @@ compose/
 | redis | 6379 | 缓存 |
 | minio | 9000 | S3 API |
 | minio | 9001 | MinIO 控制台 |
+| keycloak | 8180 | OIDC Provider |
 | skillhub-server | 8081 | API 服务 |
 | skillhub-web | 8082 | Web 界面 |
 | skill-scanner | 8083 | 安全扫描 |
@@ -59,7 +62,10 @@ cd compose/redis && docker compose up -d
 # 3. 对象存储 (MinIO)
 cd compose/minio && docker compose up -d
 
-# 4. SkillHub 应用
+# 4. OIDC Provider (Keycloak，可选)
+cd compose/keycloak && docker compose up -d
+
+# 5. SkillHub 应用
 cd compose/skillhub && docker compose up -d
 ```
 
@@ -74,6 +80,7 @@ nc -zv <HOST_IP> 5432
 nc -zv <HOST_IP> 6379
 nc -zv <HOST_IP> 9000
 nc -zv <HOST_IP> 8081
+nc -zv <HOST_IP> 8180
 ```
 
 ## 访问方式
@@ -83,6 +90,7 @@ nc -zv <HOST_IP> 8081
 - API: `http://<HOST_IP>:8081`
 - Scanner: `http://<HOST_IP>:8083`
 - MinIO 控制台：`http://<HOST_IP>:9001`
+- Keycloak 控制台：`http://<HOST_IP>:8180`
 
 ## 存储配置
 
@@ -131,6 +139,7 @@ docker compose restart
 |------|--------|------|
 | PostgreSQL | skillhub | skillhub_demo |
 | MinIO | minioadmin | minioadmin |
+| Keycloak | admin | ChangeMe!2026 |
 | SkillHub 管理员 | admin | ChangeMe!2026 |
 
 ## 安全建议
