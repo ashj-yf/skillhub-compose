@@ -1,6 +1,7 @@
 services:
   server:
     container_name: skillhub-server
+    # 国内镜像：docker.1ms.run/ghcr.io/iflytek/skillhub-server:latest
     image: ghcr.io/iflytek/skillhub-server:latest
     restart: unless-stopped
     ports:
@@ -49,6 +50,7 @@ services:
 
   web:
     container_name: skillhub-web
+    # 国内镜像：docker.1ms.run/ghcr.io/iflytek/skillhub-web:latest
     image: ghcr.io/iflytek/skillhub-web:latest
     restart: unless-stopped
     ports:
@@ -71,6 +73,7 @@ services:
 
   skill-scanner:
     container_name: skillhub-scanner
+    # 国内镜像：docker.1ms.run/ghcr.io/iflytek/skillhub-scanner:latest
     image: ghcr.io/iflytek/skillhub-scanner:latest
     restart: unless-stopped
     ports:

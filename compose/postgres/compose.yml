@@ -1,6 +1,7 @@
 services:
   postgres:
     container_name: postgres
+    # 国内镜像：docker.1ms.run/postgres:16-alpine
     image: postgres:16-alpine
     restart: unless-stopped
     ports:

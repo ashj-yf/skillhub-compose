@@ -1,7 +1,8 @@
 services:
   rustfs:
     container_name: rustfs
-    image: ghcr.io/rustfs/rustfs:latest
+    # 国内镜像：docker.1ms.run/rustfs/rustfs:latest
+    image: rustfs/rustfs:latest
     restart: unless-stopped
     ports:
       - "0.0.0.0:8000:8000"

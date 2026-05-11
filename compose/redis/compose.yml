@@ -1,6 +1,7 @@
 services:
   redis:
     container_name: redis
+    # 国内镜像：docker.1ms.run/redis:7-alpine
     image: redis:7-alpine
     restart: unless-stopped
     ports:

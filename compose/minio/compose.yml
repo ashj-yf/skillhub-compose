@@ -1,6 +1,7 @@
 services:
   minio:
     container_name: minio
+    # 国内镜像：docker.1ms.run/minio/minio:latest
     image: minio/minio:latest
     restart: unless-stopped
     command: server /data --console-address ":9001"
