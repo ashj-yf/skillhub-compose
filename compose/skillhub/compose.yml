@@ -38,10 +38,9 @@ services:
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD}
       BOOTSTRAP_ADMIN_DISPLAY_NAME: ${BOOTSTRAP_ADMIN_DISPLAY_NAME}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL}
-      # 禁用所有 OAuth2 认证，只保留本地账号登录
-      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_ENABLED: "false"
-      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITLAB_ENABLED: "false"
-      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_OIDC_ENABLED: "false"
+      # GitHub 是 Spring 内置预配置 provider，只需设置占位符避免空值验证
+      OAUTH2_GITHUB_CLIENT_ID: local-placeholder
+      OAUTH2_GITHUB_CLIENT_SECRET: local-placeholder
     volumes:
       - ./storage:/var/lib/skillhub/storage
     healthcheck:
